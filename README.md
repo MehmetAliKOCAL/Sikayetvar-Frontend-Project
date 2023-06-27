@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is a before-interview task, given by [Sikayetvar](https://www.sikayetvar.com/) company for my front-end developer job application. Click [here](https://sikayetvarfp.vercel.app) to see it live. Made with NextJS and DummyJSON API.
 
 ## Getting Started
 
