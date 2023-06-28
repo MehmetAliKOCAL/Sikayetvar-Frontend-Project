@@ -2,19 +2,14 @@ import { useState } from 'react';
 
 export default function PasswordVisibility({
   className,
+  isVisible,
 }) {
-  let [isVisible, setVisibility] =
-    useState(false);
-
   let [iconColor, setIconColor] =
     useState('#B4B4B4');
 
   return (
     <div
       className={className}
-      onClick={() => {
-        setVisibility(!isVisible);
-      }}
       onMouseEnter={() => {
         setIconColor('#fff');
       }}

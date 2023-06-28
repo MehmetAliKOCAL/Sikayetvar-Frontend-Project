@@ -1,13 +1,8 @@
 import { useRef } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { Montserrat } from 'next/font/google';
 import { toast } from 'react-toastify';
 import PasswordVisibility from '../components/icons/passwordVisibility';
-
-const montserrat = Montserrat({
-  subsets: ['latin'],
-});
 
 const inputs = [
   {
@@ -71,9 +66,7 @@ export default function Home() {
   ] = useState(false);
 
   return (
-    <main
-      className={`w-screen h-screen flex py-20 justify-center items-center overflow-x-hidden bg-gradient-49deg from-themeColor to-themeColor-lighter ${montserrat.className}`}
-    >
+    <main className='w-screen h-screen flex py-20 justify-center items-center overflow-x-hidden bg-gradient-49deg from-themeColor to-themeColor-lighter'>
       <form
         onSubmit={() => {
           event.preventDefault();
@@ -130,7 +123,12 @@ export default function Home() {
                       );
                     }}
                   >
-                    <PasswordVisibility className='z-10 h-11 right-0 w-full flex justify-center items-center cursor-pointer border-l-1 border-loginFormBorderColor transition-all duration-200 hover:bg-themeColor rounded-r-md' />
+                    <PasswordVisibility
+                      isVisible={
+                        isPasswordVisible
+                      }
+                      className='z-10 h-11 right-0 w-full flex justify-center items-center cursor-pointer border-l-1 border-loginFormBorderColor transition-all duration-200 hover:bg-themeColor rounded-r-md'
+                    />
                   </div>
                 )}
               </div>
