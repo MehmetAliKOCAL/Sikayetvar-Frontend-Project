@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function Visibility({
+export default function PasswordVisibility({
   className,
 }) {
   let [isVisible, setVisibility] =
