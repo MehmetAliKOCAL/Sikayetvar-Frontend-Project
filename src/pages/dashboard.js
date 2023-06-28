@@ -5,6 +5,7 @@ import BookmarkIcon from '@/components/icons/bookmark';
 import PaymentIcon from '@/components/icons/payment';
 import UsersIcon from '@/components/icons/users';
 import DashboardCards from '@/components/dashboardCards';
+import Head from 'next/head';
 
 export default function Dashboard() {
   const cards = [
@@ -59,6 +60,17 @@ export default function Dashboard() {
 
   return (
     <div className='flex bg-white text-black w-full h-screen overflow-x-hidden'>
+      <Head>
+        <title>Dashboard | SVFP</title>
+        <meta
+          property='og:title'
+          content='Dashboard | SVFP'
+        />
+        <meta
+          property='twitter:title'
+          content='Dashboard | SVFP'
+        />
+      </Head>
       <SideMenu
         userImage='/images/dummyPersonImage.webp'
         name='John'
