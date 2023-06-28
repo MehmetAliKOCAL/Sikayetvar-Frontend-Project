@@ -10,6 +10,8 @@ module.exports = {
       backgroundImage: {
         'gradient-49deg':
           'linear-gradient(49deg, var(--tw-gradient-stops))',
+        'gradient-134deg':
+          'linear-gradient(134deg, var(--tw-gradient-stops))',
         'gradient-radial':
           'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
@@ -18,6 +20,7 @@ module.exports = {
       colors: {
         themeColor: '#FEAF00',
         'themeColor-lighter': '#F8D442',
+        'themeColor-faded': '#F2EAE1',
         fadedTextColor: '#6C6C6C',
         loginFormBorderColor: '#E5E5E5',
         inputPlaceholderColor: '#CDCDCD',
@@ -35,6 +38,9 @@ module.exports = {
       },
       screens: {
         xs: '420px',
+      },
+      width: {
+        68: '270px',
       },
     },
   },
