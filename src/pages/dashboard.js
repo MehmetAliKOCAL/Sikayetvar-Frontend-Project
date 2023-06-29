@@ -52,8 +52,7 @@ export default function Dashboard() {
       ),
       title: 'Users',
       count: '3',
-      bgColor:
-        'bg-gradient-134deg from-themeColor to-themeColor-lighter',
+      bgColor: 'bg-gradient-134deg from-themeColor to-themeColor-lighter',
       textColor: 'text-white',
     },
   ];
@@ -77,9 +76,9 @@ export default function Dashboard() {
         surname='Doe'
         role='Admin'
       />
-      <main className='w-full px-6'>
+      <main className='w-full'>
         <TopBar />
-        <section className='py-4'>
+        <section className='py-4 px-6'>
           <DashboardCards items={cards} />
         </section>
       </main>
