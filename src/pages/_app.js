@@ -8,10 +8,7 @@ const montserrat = Montserrat({
   subsets: ['latin'],
 });
 
-export default function App({
-  Component,
-  pageProps,
-}) {
+export default function App({ Component, pageProps }) {
   return (
     <div className={`${montserrat.className}`}>
       <Head>
@@ -36,16 +33,12 @@ export default function App({
           content='https://sikayetvarfp.vercel.app/'
         />
         <meta
-          property='og:type'
-          content='website'
-        />
-        <meta
           property='og:image'
-          content='https://sikayetvarfp.vercel.app/logo.png'
+          content='https://sikayetvarfp.vercel.app/images/logo.png'
         />
         <meta
           property='twitter:image'
-          content='https://sikayetvarfp.vercel.app/logo.png'
+          content='https://sikayetvarfp.vercel.app/images/logo.png'
         />
         <meta
           property='twitter:domain'
@@ -54,6 +47,10 @@ export default function App({
         <meta
           name='twitter:card'
           content='summary_large_image'
+        />
+        <meta
+          property='og:type'
+          content='website'
         />
       </Head>
       <Component {...pageProps} />{' '}
