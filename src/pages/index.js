@@ -28,23 +28,16 @@ export default function Home() {
   const password = useRef(null);
 
   function isEmailValid() {
-    const isValid =
-      /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(
-        email.current.value
-      );
+    const isValid = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email.current.value);
 
     if (!isValid) {
-      toast.error(
-        'Please enter a valid email adress'
-      );
+      toast.error('Please enter a valid email adress');
     }
     return isValid;
   }
 
   function isPasswordValid() {
-    const isValid = /^[\w\W]+$/.test(
-      password.current.value
-    );
+    const isValid = /^[\w\W]+$/.test(password.current.value);
 
     if (!isValid) {
       toast.error('Your password is incorrect');
@@ -54,17 +47,12 @@ export default function Home() {
 
   function login() {
     if (isEmailValid() && isPasswordValid()) {
-      toast.success(
-        "You've successfully logged in"
-      );
+      toast.success("You've successfully logged in");
       router.push('/dashboard');
     }
   }
 
-  const [
-    isPasswordVisible,
-    setIsPasswordVisible,
-  ] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
     <div>
@@ -93,8 +81,7 @@ export default function Home() {
             Sign In
           </h2>
           <p className='mt-1 text-sm max-xs:text-xs text-fadedTextColor font-medium text-center'>
-            Enter your credentials to access your
-            account
+            Enter your credentials to access your account
           </p>
           <div className='mt-10 max-xs:mt-6 w-full flex flex-col gap-y-4'>
             {inputs.map((input) => (
@@ -105,44 +92,27 @@ export default function Home() {
                 >
                   {input.label}
                 </label>
-                <div className='flex w-full mt-1.5 relative items-center border-1 rounded-md hover:border-themeColor-lighter/60 border-loginFormBorderColor'>
+                <div className='flex w-full mt-1.5 relative items-center border-1 rounded-md hover:border-themeColor-lighter/60 border-borderColor'>
                   <input
                     id={input.id}
-                    ref={
-                      input.id === 'password'
-                        ? password
-                        : email
-                    }
-                    type={
-                      input.id === 'password' &&
-                      !isPasswordVisible
-                        ? input.type
-                        : 'text'
-                    }
-                    placeholder={
-                      input.placeholder
-                    }
+                    ref={input.id === 'password' ? password : email}
+                    type={input.id === 'password' && !isPasswordVisible ? input.type : 'text'}
+                    placeholder={input.placeholder}
                     autoComplete='on'
                     className={`p-4 h-11 flex-shrink-0 rounded-md outline-none text-sm transition-all duration-200 placeholder:text-xs placeholder:text-inputPlaceholderColor ${
-                      input.id === 'password'
-                        ? 'w-5/6'
-                        : 'w-full'
+                      input.id === 'password' ? 'w-5/6' : 'w-full'
                     }`}
                   />
                   {input.id === 'password' && (
                     <div
                       className='w-full'
                       onClick={() => {
-                        setIsPasswordVisible(
-                          !isPasswordVisible
-                        );
+                        setIsPasswordVisible(!isPasswordVisible);
                       }}
                     >
                       <PasswordVisibility
-                        isVisible={
-                          isPasswordVisible
-                        }
-                        className='z-10 h-11 right-0 w-full flex justify-center items-center cursor-pointer border-l-1 border-loginFormBorderColor transition-all duration-200 hover:bg-themeColor rounded-r-md'
+                        isVisible={isPasswordVisible}
+                        className='z-10 h-11 right-0 w-full flex justify-center items-center cursor-pointer border-l-1 border-borderColor transition-all duration-200 hover:bg-themeColor rounded-r-md'
                       />
                     </div>
                   )}
