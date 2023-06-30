@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
+import useSWR from 'swr';
 import Fuse from 'fuse.js';
 import Head from 'next/head';
+import Swal from 'sweetalert2';
 import TopBar from '@/components/topBar';
 import SideMenu from '@/components/sideMenu';
-import useSWR from 'swr';
-import LoadingIcon from '@/components/icons/loading';
 import EditIcon from '@/components/icons/edit';
 import DeleteIcon from '@/components/icons/delete';
+import DynamicForm from '@/components/dynamicForm';
+import LoadingIcon from '@/components/icons/loading';
 
 export default function Students() {
   const router = useRouter();
@@ -38,12 +40,13 @@ export default function Students() {
   }, []);
 
   const linkToBeRouted = `/students?limit=${queries().limit || 0}&skip=${queries().skip || 0}`;
-  const requestLink = `/api/getStudents?limit=${queries().limit}&skip=${queries().skip}`;
+  const requestLink = `/api/getUsers?limit=${queries().limit}&skip=${queries().skip}`;
   const [searchedStudents, setSearchedStudents] = useState([]);
   const tableTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
   const userProperties = ['fullName', 'email', 'phone', 'domain', 'companyName'];
   const [isEditable, setIsEditable] = useState(false);
-  const [userBeingEdited, setUserBeingEdited] = useState({
+  const [initialUserData, setInitialUserData] = useState({});
+  const [editedUserData, setEditedUserData] = useState({
     firstName: '',
     lastName: '',
     email: '',
@@ -56,27 +59,32 @@ export default function Students() {
       type: 'text',
       property: 'firstName',
       label: 'First Name',
+      placeholder: 'John',
     },
-    { type: 'text', property: 'lastName', label: 'Last Name' },
+    { type: 'text', property: 'lastName', label: 'Last Name', placeholder: 'Doe' },
     {
       type: 'email',
       property: 'email',
       label: 'Email',
+      placeholder: 'john_doe@sikayetvar.com',
     },
     {
       type: 'tel',
       property: 'phone',
       label: 'Phone',
+      placeholder: '+1 303 205 19 24',
     },
     {
       type: 'text',
       property: 'domain',
       label: 'Website',
+      placeholder: 'johndoe.com',
     },
     {
       type: 'text',
       property: 'companyName',
       label: 'Company Name',
+      placeholder: 'Doe Transportation',
     },
   ];
 
@@ -89,7 +97,7 @@ export default function Students() {
       threshold: 0.3,
     };
 
-    const fuse = new Fuse(fetchUsers, options);
+    const fuse = new Fuse(usersData.users, options);
     const searchResult = fuse.search(query);
     setSearchedStudents(searchResult);
 
@@ -99,32 +107,216 @@ export default function Students() {
   }
 
   const fetcher = (...args) => fetch(...args).then((res) => res.json());
-  const { data: users, error, isLoading: areUsersFetched } = useSWR(requestLink, fetcher);
+  const { data: usersData, error, isLoading: areUsersFetched } = useSWR(requestLink, fetcher);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    setIsLoading(areUsersFetched);
+  }, [areUsersFetched]);
 
-  function allowEditing(userID) {
-    users.users.forEach((user) => {
-      if (user.id === userID) {
-        setUserBeingEdited(user);
-      }
-    });
-    setIsEditable(true);
+  function allowEditingOrCreating(userID, action) {
+    if (action === 'edit') {
+      usersData.users.forEach((user) => {
+        if (user.id === userID) {
+          setInitialUserData(user);
+          setEditedUserData(user);
+        }
+      });
+      setIsEditable(true);
+    } else if (action === 'create') {
+    }
   }
 
-  async function editUser(user) {
-    const userQuery = encodeURIComponent(
-      JSON.stringify({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        domain: user.domain,
-        company: { name: user.companyName },
-      })
-    );
+  function isFirstNameValid(fistName) {
+    const isValid = /^[a-zA-ZçÇğĞıİöÖşŞüÜ\ ]+$/.test(fistName);
+    if (!isValid) {
+      toast.error('Please enter a valid first name');
+    }
+    return isValid;
+  }
 
-    const response = await fetch(`/api/updateStudent?id=${user.id}&user=${userQuery}`).then((res) =>
-      res.json()
+  function isLastNameValid(lastName) {
+    const isValid = /^[a-zA-ZçÇğĞıİöÖşŞüÜ\ ]+$/.test(lastName);
+    if (!isValid) {
+      toast.error('Please enter a valid last name');
+    }
+    return isValid;
+  }
+
+  function areThereEmptyInputs(data) {
+    const isValid = !Object.values(data).includes('');
+    if (!isValid) {
+      toast.error('Please fill out all input-fields');
+    }
+    return isValid;
+  }
+
+  function isEmailValid(email) {
+    const isValid = /^[\w]+[\w\-\_\.]+[\w]+\@[\w]+[\w\.]+[\w]{2,}$/.test(email);
+    if (!isValid) {
+      toast.error('Please enter a valid email adress');
+    }
+    return isValid;
+  }
+
+  function isWebsiteValid(website) {
+    const isValid = /^[\w]+[\.\w\-]{0,}[\w]\.[\w]{2,}$/.test(website);
+    if (!isValid) {
+      toast.error('Please enter a valid domain adress');
+    }
+    return isValid;
+  }
+
+  function isPhoneValid(phone) {
+    const isValid = /^[\+]{0,1}[\d\ ]+$/.test(phone);
+    if (!isValid) {
+      toast.error('Please enter a valid phone number');
+    }
+    return isValid;
+  }
+
+  function isFormDataValid(userData) {
+    isFirstNameValid(userData.firstName);
+    isLastNameValid(userData.lastName);
+    isEmailValid(userData.email);
+    isPhoneValid(userData.phone);
+    isWebsiteValid(userData.domain);
+    areThereEmptyInputs(userData);
+
+    return (
+      isFirstNameValid(userData.firstName) &&
+      isLastNameValid(userData.lastName) &&
+      isEmailValid(userData.email) &&
+      isPhoneValid(userData.phone) &&
+      isWebsiteValid(userData.domain) &&
+      areThereEmptyInputs(userData)
     );
+  }
+
+  async function createUser(userData) {
+    if (isFormDataValid(userData)) {
+      setIsLoading(true);
+
+      const query = encodeURIComponent(JSON.stringify(newUserData));
+      const response = await fetch(`/api/createUser?userData=${query}`, {
+        method: 'POST',
+      }).then((res) => {
+        return res.json();
+      });
+
+      showResult(response, 'create');
+    }
+  }
+
+  const [newUserData, setNewUserData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    domain: '',
+    companyName: '',
+  });
+  const [formType, setFormType] = useState('forEditing');
+  const dynamicFormProps = {
+    forEditing: {
+      formTitle: 'Edit The Student',
+      inputsArray: inputsForEditingUsers,
+      placeholderData: initialUserData,
+      editableData: editedUserData,
+      submitButtonText: 'Save Changes',
+      inputOnChangeFunction: () =>
+        setEditedUserData({
+          ...editedUserData,
+          [event.target.id]: event.target.value,
+        }),
+      submitButtonFunction: () => editUser(editedUserData),
+    },
+    forCreating: {
+      formTitle: 'Add New Student',
+      inputsArray: inputsForEditingUsers,
+      placeholderData: '',
+      editableData: newUserData,
+      submitButtonText: 'Create Student',
+      inputOnChangeFunction: () =>
+        setNewUserData({
+          ...newUserData,
+          [event.target.id]: event.target.value,
+        }),
+      submitButtonFunction: () => createUser(newUserData),
+    },
+  };
+
+  async function editUser(user) {
+    if (isFormDataValid(user)) {
+      setIsLoading(true);
+      const userQuery = encodeURIComponent(
+        JSON.stringify({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          domain: user.domain,
+          company: { name: user.companyName },
+        })
+      );
+
+      const response = await fetch(`/api/updateUser?id=${user.id}&user=${userQuery}`).then((res) =>
+        res.json()
+      );
+
+      showResult(response, 'change');
+    }
+  }
+
+  function updateStudents(editedUser, updatingMethod) {
+    setIsEditable(false);
+    if (updatingMethod === 'change') {
+      usersData.users = usersData.users.map((user) => {
+        if (user.id === editedUser.id) {
+          return editedUser;
+        } else return user;
+      });
+    } else if (updatingMethod === 'delete') {
+      usersData.users.forEach((user) => {
+        if (user.id === editedUser.id) {
+          usersData.users.splice(usersData.users.indexOf(user), 1);
+        }
+      });
+    } else if (updatingMethod === 'create') {
+      usersData.users.unshift(editedUser);
+    }
+  }
+
+  function showResult(response, updatingMethod) {
+    setIsLoading(false);
+    if (response.ok) {
+      toast.success('User updated Successfully');
+      updateStudents(response.data, updatingMethod);
+    } else {
+      toast.error(response.message);
+    }
+  }
+
+  async function deleteUser(userID) {
+    const areYouSure = await Swal.fire({
+      icon: 'question',
+      title: 'Are You Sure?',
+      text: "This action will delete the user data and can't be reverted.",
+      focusConfirm: true,
+      showDenyButton: true,
+      confirmButtonText: 'Yes, delete it',
+      denyButtonText: 'Cancel',
+    }).then((result) => {
+      return result.value;
+    });
+
+    if (areYouSure) {
+      setIsLoading(true);
+      const response = await fetch(`/api/deleteUser?id=${userID}`).then((res) => {
+        return res.json();
+      });
+
+      showResult(response, 'delete');
+    }
   }
 
   return (
@@ -141,7 +333,7 @@ export default function Students() {
         />
       </Head>
       <SideMenu
-        userImage='/images/dummyPersonImage.webp'
+        userImage='/images/dummyAvatar.webp'
         name='John'
         surname='Doe'
         role='Admin'
@@ -157,7 +349,13 @@ export default function Students() {
                 placeholder='Search...'
                 className='py-2.5 px-4 rounded-lg border-1 border-borderColor outline-none text-sm placeholder:text-inputPlaceholderColor'
               />
-              <button className='py-3 px-8 text-xs text-white font-medium rounded-md uppercase bg-themeColor'>
+              <button
+                onClick={() => {
+                  setIsEditable(true);
+                  setFormType('forCreating');
+                }}
+                className='py-3 px-8 text-xs text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 active:scale-95'
+              >
                 Add New Student
               </button>
             </div>
@@ -165,7 +363,7 @@ export default function Students() {
 
           <hr className='my-4' />
 
-          <div className='pl-28 flex text-xs gap-x-2 leading-4 font-semibold text-tableCaptionColor'>
+          <div className='pl-28 flex text-xs gap-x-7 leading-4 font-semibold text-tableCaptionColor'>
             {tableTitles.map((title) => {
               return (
                 <p
@@ -179,8 +377,9 @@ export default function Students() {
           </div>
 
           <div className='py-4  flex flex-col gap-y-3'>
-            {!areUsersFetched && users?.ok ? (
-              users.users.map((user) => {
+            {!isLoading &&
+              usersData?.ok &&
+              usersData.users.map((user) => {
                 user.fullName = `${user.firstName} ${user.lastName}`;
                 user.companyName = user.company.name;
 
@@ -190,7 +389,7 @@ export default function Students() {
                     className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
                   >
                     <img
-                      src={user.image}
+                      src={user.image || '/images/dummyPersonImage.webp'}
                       alt={user.fullName}
                       width='70'
                       height='70'
@@ -209,21 +408,26 @@ export default function Students() {
                     <div className='space-x-10'>
                       <button
                         onClick={() => {
-                          allowEditing(user.id);
+                          allowEditingOrCreating(user.id, 'edit');
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
                         <EditIcon />
                       </button>
-                      <button className='active:scale-75 transition-all duration-200'>
+                      <button
+                        onClick={() => {
+                          deleteUser(user.id);
+                        }}
+                        className='active:scale-75 transition-all duration-200'
+                      >
                         <DeleteIcon />
                       </button>
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              <div className='w-screen h-screen absolute top-0 left-0 flex items-center justify-center bg-black/40'>
+              })}
+            {isLoading && (
+              <div className='w-screen h-screen absolute top-0 left-0 z-20 flex items-center justify-center bg-black/40'>
                 <div className='w-44 flex items-center'>
                   <LoadingIcon />
                 </div>
@@ -233,7 +437,7 @@ export default function Students() {
         </section>
 
         <div
-          className={`w-screen h-screen absolute top-0 right-0 flex flex-col justify-center items-center bg-black/40 transform-all duration-300 overflow-x-hidden ${
+          className={`w-screen h-screen absolute top-0 right-0 flex flex-col py-10 justify-center items-center bg-black/40 transform-all duration-300 overflow-x-hidden overflow-y-auto ${
             isEditable ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
         >
@@ -243,53 +447,16 @@ export default function Students() {
             }}
             className='w-full h-full absolute top-0 right-0'
           />
-          <form
-            onClick={() => {
-              event.preventDefault();
-            }}
-            className='z-10 p-8 max-xs:p-4 w-1/4 relative flex flex-col gap-y-2 bg-white text-black shadow-form xs:rounded-[20px]'
-          >
-            <h1 className='pl-3 mb-6 w-fit mx-auto text-2xl h-8 flex justify-center items-center font-bold uppercase border-l-6 border-themeColor-lighter text-center'>
-              Edit The Student
-            </h1>
-            {inputsForEditingUsers.map((input) => {
-              return (
-                <div
-                  className='flex flex-col gap-y-1'
-                  key={input.property}
-                >
-                  <label
-                    htmlFor={input.property}
-                    className='text-sm max-xs:text-xs font-medium text-fadedTextColor'
-                  >
-                    {input.label}
-                  </label>
-                  <input
-                    id={input.property}
-                    type={input.type}
-                    placeholder={userBeingEdited[input.property]}
-                    value={userBeingEdited[input.property]}
-                    onChange={() => {
-                      setUserBeingEdited({
-                        ...userBeingEdited,
-                        [input.property]: event.target.value,
-                      });
-                    }}
-                    className='p-4 w-full h-11 flex-shrink-0 rounded-md outline-none text-sm transition-all duration-200 border-1 hover:border-themeColor-lighter focus:border-themeColor border-borderColor placeholder:text-xs placeholder:text-inputPlaceholderColor'
-                  />
-                </div>
-              );
-            })}
-            <button
-              onClick={() => {
-                editUser(userBeingEdited);
-              }}
-              type='submit'
-              className='py-3 px-16 mt-5 mb-2 text-xs text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 hover:bg-themeColor/80 active:scale-95'
-            >
-              Save Changes
-            </button>
-          </form>
+          <DynamicForm
+            formTitle={dynamicFormProps[formType].formTitle}
+            inputsArray={dynamicFormProps[formType].inputsArray}
+            placeholderData={dynamicFormProps[formType].placeholderData}
+            editableData={dynamicFormProps[formType].editableData}
+            submitButtonText={dynamicFormProps[formType].submitButtonText}
+            inputOnChangeFunction={dynamicFormProps[formType].inputOnChangeFunction}
+            submitButtonFunction={dynamicFormProps[formType].submitButtonFunction}
+          />
+
           <p className='px-8 py-1 rounded-b-md bg-black/50 text-white text-xs shadow-form'>
             Click outside of the form to close it
           </p>
