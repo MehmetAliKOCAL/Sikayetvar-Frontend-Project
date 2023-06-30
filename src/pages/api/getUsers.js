@@ -5,23 +5,12 @@ export default async function handler(req, res) {
     .then(async (res) => {
       return {
         ok: res.ok,
-        data: await res.json(),
+        ...(await res.json()),
       };
-    })
-    .then((res) => {
-      if (res.ok)
-        return {
-          ok: res.ok,
-          users: res.data.users,
-        };
-      else
-        return {
-          ok: res.ok,
-          message: res.data.message,
-        };
     })
     .catch((error) => {
       return error;
     });
+
   res.status(res.statusCode).json(response);
 }

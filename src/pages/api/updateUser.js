@@ -6,8 +6,11 @@ export default async function handler(req, res) {
     headers: { 'Content-Type': 'application/json' },
     body: user,
   })
-    .then((res) => {
-      return res.json();
+    .then(async (res) => {
+      return {
+        ok: res.ok,
+        data: await res.json(),
+      };
     })
     .catch((error) => {
       return error;
