@@ -28,12 +28,6 @@ export default function Students() {
     } else return [];
   };
 
-  const linkToBeRouted = `/students?limit=${queries().limit || 0}&skip=${queries().skip || 0}`;
-  const requestLink = `/api/getStudents?limit=${queries().limit}&skip=${queries().skip}`;
-  const [searchedStudents, setSearchedStudents] = useState([]);
-  const tableRowTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
-  const inputs = ['fullName', 'email', 'phone', 'website', 'companyName'];
-
   function redirectIfNeeded() {
     if (!queries().limit || !queries().skip) {
       router.replace(linkToBeRouted);
@@ -42,6 +36,49 @@ export default function Students() {
   useEffect(() => {
     window.addEventListener('load', redirectIfNeeded());
   }, []);
+
+  const linkToBeRouted = `/students?limit=${queries().limit || 0}&skip=${queries().skip || 0}`;
+  const requestLink = `/api/getStudents?limit=${queries().limit}&skip=${queries().skip}`;
+  const [searchedStudents, setSearchedStudents] = useState([]);
+  const tableTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
+  const userProperties = ['fullName', 'email', 'phone', 'domain', 'companyName'];
+  const [isEditable, setIsEditable] = useState(false);
+  const [userBeingEdited, setUserBeingEdited] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    domain: '',
+    companyName: '',
+  });
+  const inputsForEditingUsers = [
+    {
+      type: 'text',
+      property: 'firstName',
+      label: 'First Name',
+    },
+    { type: 'text', property: 'lastName', label: 'Last Name' },
+    {
+      type: 'email',
+      property: 'email',
+      label: 'Email',
+    },
+    {
+      type: 'tel',
+      property: 'phone',
+      label: 'Phone',
+    },
+    {
+      type: 'text',
+      property: 'domain',
+      label: 'Website',
+    },
+    {
+      type: 'text',
+      property: 'companyName',
+      label: 'Company Name',
+    },
+  ];
 
   function search(query) {
     const options = {
@@ -52,7 +89,7 @@ export default function Students() {
       threshold: 0.3,
     };
 
-    const fuse = new Fuse(data, options);
+    const fuse = new Fuse(fetchUsers, options);
     const searchResult = fuse.search(query);
     setSearchedStudents(searchResult);
 
@@ -62,32 +99,33 @@ export default function Students() {
   }
 
   const fetcher = (...args) => fetch(...args).then((res) => res.json());
-  const { data, error, isLoading } = useSWR(requestLink, fetcher);
+  const { data: users, error, isLoading: areUsersFetched } = useSWR(requestLink, fetcher);
 
-  const [users, setUsers] = useState(data);
-  function updateUsers(userID, newValues) {
-    const newState = users.map((user) => {
+  function allowEditing(userID) {
+    users.users.forEach((user) => {
       if (user.id === userID) {
-        return { ...user, ...newValues };
-      } else {
-        return user;
+        setUserBeingEdited(user);
       }
     });
-
-    setTimeout(() => {
-      setUsers(newState);
-    }, 1);
+    setIsEditable(true);
   }
 
-  function handleInitialPageLoad() {
-    if (!isLoading) {
-      setUsers(data.users);
-    }
-  }
+  async function editUser(user) {
+    const userQuery = encodeURIComponent(
+      JSON.stringify({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        domain: user.domain,
+        company: { name: user.companyName },
+      })
+    );
 
-  useEffect(() => {
-    handleInitialPageLoad();
-  }, [isLoading]);
+    const response = await fetch(`/api/updateStudent?id=${user.id}&user=${userQuery}`).then((res) =>
+      res.json()
+    );
+  }
 
   return (
     <div className='flex bg-studentPageBGColor text-black w-full h-screen overflow-x-hidden'>
@@ -128,7 +166,7 @@ export default function Students() {
           <hr className='my-4' />
 
           <div className='pl-28 flex text-xs gap-x-2 leading-4 font-semibold text-tableCaptionColor'>
-            {tableRowTitles.map((title) => {
+            {tableTitles.map((title) => {
               return (
                 <p
                   key={title}
@@ -141,14 +179,10 @@ export default function Students() {
           </div>
 
           <div className='py-4  flex flex-col gap-y-3'>
-            {!isLoading && data && data.ok && users ? (
-              users.map((user) => {
-                updateUsers(user.id, {
-                  fullName: `${user.firstName} ${user.lastName}`,
-                  website: `${user.firstName}${user.lastName}.com`.toLowerCase(),
-                  companyName: user.company.name,
-                  isEditingDisabled: true,
-                });
+            {!areUsersFetched && users?.ok ? (
+              users.users.map((user) => {
+                user.fullName = `${user.firstName} ${user.lastName}`;
+                user.companyName = user.company.name;
 
                 return (
                   <div
@@ -156,32 +190,26 @@ export default function Students() {
                     className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
                   >
                     <img
-                      src={
-                        user.gender === 'male'
-                          ? '/images/dummyMaleImage.webp'
-                          : '/images/dummyFemaleImage.webp'
-                      }
+                      src={user.image}
+                      alt={user.fullName}
                       width='70'
                       height='70'
                       className='w-[70px] h-[70px] rounded-lg object-cover object-center'
                     />
-                    {inputs.map((input) => {
+                    {userProperties.map((property) => {
                       return (
-                        <input
-                          id={`${input}${user.id}`}
-                          key={input + user.id}
-                          type='text'
-                          value={user[input]}
-                          disabled={true}
-                          className='w-2/12 px-4 py-2 truncate text-left rounded-md outline-none border-1 border-borderColor disabled:bg-white disabled:border-transparent'
-                        />
+                        <div
+                          key={property + user.id}
+                          className='w-2/12 px-4 py-2 truncate text-left rounded-md'
+                        >
+                          {user[property]}
+                        </div>
                       );
                     })}
                     <div className='space-x-10'>
                       <button
                         onClick={() => {
-                          updateUsers(user.id, { isEditingDisabled: false });
-                          console.log('basildi');
+                          allowEditing(user.id);
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
@@ -196,14 +224,76 @@ export default function Students() {
               })
             ) : (
               <div className='w-screen h-screen absolute top-0 left-0 flex items-center justify-center bg-black/40'>
-                <div className='w-52 flex items-center'>
+                <div className='w-44 flex items-center'>
                   <LoadingIcon />
-                  <p className='text-white text-2xl font-bold'>Loading...</p>
                 </div>
               </div>
             )}
           </div>
         </section>
+
+        <div
+          className={`w-screen h-screen absolute top-0 right-0 flex flex-col justify-center items-center bg-black/40 transform-all duration-300 overflow-x-hidden ${
+            isEditable ? 'opacity-100 visible' : 'opacity-0 invisible'
+          }`}
+        >
+          <button
+            onClick={() => {
+              setIsEditable(false);
+            }}
+            className='w-full h-full absolute top-0 right-0'
+          />
+          <form
+            onClick={() => {
+              event.preventDefault();
+            }}
+            className='z-10 p-8 max-xs:p-4 w-1/4 relative flex flex-col gap-y-2 bg-white text-black shadow-form xs:rounded-[20px]'
+          >
+            <h1 className='pl-3 mb-6 w-fit mx-auto text-2xl h-8 flex justify-center items-center font-bold uppercase border-l-6 border-themeColor-lighter text-center'>
+              Edit The Student
+            </h1>
+            {inputsForEditingUsers.map((input) => {
+              return (
+                <div
+                  className='flex flex-col gap-y-1'
+                  key={input.property}
+                >
+                  <label
+                    htmlFor={input.property}
+                    className='text-sm max-xs:text-xs font-medium text-fadedTextColor'
+                  >
+                    {input.label}
+                  </label>
+                  <input
+                    id={input.property}
+                    type={input.type}
+                    placeholder={userBeingEdited[input.property]}
+                    value={userBeingEdited[input.property]}
+                    onChange={() => {
+                      setUserBeingEdited({
+                        ...userBeingEdited,
+                        [input.property]: event.target.value,
+                      });
+                    }}
+                    className='p-4 w-full h-11 flex-shrink-0 rounded-md outline-none text-sm transition-all duration-200 border-1 hover:border-themeColor-lighter focus:border-themeColor border-borderColor placeholder:text-xs placeholder:text-inputPlaceholderColor'
+                  />
+                </div>
+              );
+            })}
+            <button
+              onClick={() => {
+                editUser(userBeingEdited);
+              }}
+              type='submit'
+              className='py-3 px-16 mt-5 mb-2 text-xs text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 hover:bg-themeColor/80 active:scale-95'
+            >
+              Save Changes
+            </button>
+          </form>
+          <p className='px-8 py-1 rounded-b-md bg-black/50 text-white text-xs shadow-form'>
+            Click outside of the form to close it
+          </p>
+        </div>
       </main>
     </div>
   );
