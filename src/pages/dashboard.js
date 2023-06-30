@@ -75,7 +75,7 @@ export default function Dashboard() {
         />
       </Head>
       <SideMenu
-        userImage='/images/dummyPersonImage.webp'
+        userImage='/images/dummyAvatar.webp'
         name='John'
         surname='Doe'
         role='Admin'
