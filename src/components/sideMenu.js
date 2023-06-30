@@ -1,14 +1,14 @@
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import HomeIcon from './icons/home';
-import GraduationIcon from './icons/graduation';
-import BookmarkIcon from './icons/bookmark';
-import PaymentIcon from './icons/payment';
-import ReportIcon from './icons/report';
-import SettingsIcon from './icons/settings';
-import LogoutIcon from './icons/logout';
-import HamburgerMenuIcon from './icons/hamburgerMenu';
 import { useState } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import HomeIcon from './icons/home';
+import ReportIcon from './icons/report';
+import LogoutIcon from './icons/logout';
+import PaymentIcon from './icons/payment';
+import BookmarkIcon from './icons/bookmark';
+import SettingsIcon from './icons/settings';
+import GraduationIcon from './icons/graduation';
+import HamburgerMenuIcon from './icons/hamburgerMenu';
 
 export default function SideMenu({ userImage, name, surname, role }) {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function SideMenu({ userImage, name, surname, role }) {
     },
     {
       text: 'Course',
-      redirectTo: '#',
+      redirectTo: '',
       icon: <BookmarkIcon />,
     },
     {
@@ -33,17 +33,17 @@ export default function SideMenu({ userImage, name, surname, role }) {
     },
     {
       text: 'Payment',
-      redirectTo: '#',
+      redirectTo: '',
       icon: <PaymentIcon />,
     },
     {
       text: 'Report',
-      redirectTo: '#',
+      redirectTo: '',
       icon: <ReportIcon />,
     },
     {
       text: 'Settings',
-      redirectTo: '#',
+      redirectTo: '',
       icon: <SettingsIcon />,
     },
   ];

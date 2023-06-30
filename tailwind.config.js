@@ -24,7 +24,7 @@ module.exports = {
         studentPageBGColor: '#F8F8F8',
       },
       boxShadow: {
-        loginForm: '2px 5px 10px 0px rgba(0, 0, 0, 0.10)',
+        form: '2px 5px 10px 0px rgba(0, 0, 0, 0.10)',
       },
       borderWidth: {
         1: '1px',

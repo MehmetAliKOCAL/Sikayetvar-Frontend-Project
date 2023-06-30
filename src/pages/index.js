@@ -72,7 +72,7 @@ export default function Home() {
           onSubmit={() => {
             event.preventDefault();
           }}
-          className='w-[475px] h-[550px] max-xs:px-4 px-8 bg-white text-black xs:rounded-[20px] flex flex-col justify-center items-center shadow-loginForm'
+          className='w-[475px] h-[550px] max-xs:px-4 px-8 bg-white text-black xs:rounded-[20px] flex flex-col justify-center items-center shadow-form'
         >
           <h1 className='pl-3 text-3.5xl max-xs:text-2xl h-10 flex justify-center items-center font-bold uppercase border-l-6 border-themeColor-lighter text-center'>
             Manage Courses
