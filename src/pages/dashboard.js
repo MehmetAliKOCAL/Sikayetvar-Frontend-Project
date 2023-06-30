@@ -19,6 +19,7 @@ export default function Dashboard() {
       title: 'Students',
       count: '243',
       bgColor: 'bg-blue-50',
+      redirectTo: '/students',
     },
     {
       icon: (
@@ -30,6 +31,7 @@ export default function Dashboard() {
       title: 'Course',
       count: '13',
       bgColor: 'bg-pink-50',
+      redirectTo: '/dashboard',
     },
     {
       icon: (
@@ -42,6 +44,7 @@ export default function Dashboard() {
       count: '556,000',
       currency: '₺',
       bgColor: 'bg-yellow-50',
+      redirectTo: '/dashboard',
     },
     {
       icon: (
@@ -54,6 +57,7 @@ export default function Dashboard() {
       count: '3',
       bgColor: 'bg-gradient-134deg from-themeColor to-themeColor-lighter',
       textColor: 'text-white',
+      redirectTo: '/dashboard',
     },
   ];
 
