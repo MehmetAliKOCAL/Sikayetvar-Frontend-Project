@@ -12,6 +12,9 @@ import DeleteIcon from '@/components/icons/delete';
 import DynamicForm from '@/components/dynamicForm';
 import SearchIcon from '@/components/icons/search';
 import LoadingIcon from '@/components/icons/loading';
+import DropdownIcon from '@/components/icons/dropdown';
+import LeftArrowIcon from '@/components/icons/arrowLeft';
+import RightArrowIcon from '@/components/icons/arrowLeft';
 
 export default function Students() {
   const router = useRouter();
@@ -31,20 +34,77 @@ export default function Students() {
     } else return [];
   };
 
-  function redirectIfNeeded() {
-    if (!queries().limit || !queries().skip) {
-      router.replace(linkToBeRouted);
+  function handlePageLoad() {
+    const areQueriesNotProvided = !queries().page || !queries().pageSize;
+    const page = parseInt(queries()?.page);
+    const pageSize = parseInt(queries()?.pageSize);
+    const studentsToList = page * pageSize;
+    const maxStudentsAPIcanReturn = 100;
+    const isLastPage = Math.ceil(maxStudentsAPIcanReturn / pageSize) === page;
+
+    if (areQueriesNotProvided) {
+      router.replace(routeWithValidQueries('1', '6'));
+    }
+    if (studentsToList > maxStudentsAPIcanReturn && !isLastPage) {
+      router.replace(routeWithValidQueries('1', '6'));
     }
   }
+
   useEffect(() => {
-    window.addEventListener('load', redirectIfNeeded());
+    window.addEventListener('load', handlePageLoad());
   }, []);
 
-  const linkToBeRouted = `/students?limit=${queries().limit || 0}&skip=${queries().skip || 0}`;
-  const requestLink = `/api/getUsers?limit=${queries().limit}&skip=${queries().skip}`;
-  const [searchedStudents, setSearchedStudents] = useState([]);
+  function handlePageIfEmpty(existingItemsCount) {
+    const page = parseInt(queries()?.page);
+    const pageSize = parseInt(queries()?.pageSize);
+    const isLastPage = Math.ceil(existingItemsCount / pageSize) === page;
+    const studentsToList = page * pageSize;
+    if (studentsToList > existingItemsCount && !isLastPage) {
+      router.replace(routeWithValidQueries('1', '6', queries().search));
+      toast.info("You've reached the end of the list and directed to the head of it.");
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  function paginateTheList(list) {
+    if (usersData?.users?.length > 0) {
+      let singlePage = [];
+      const allPages = [];
+      const allItemsCount = list.length;
+      const pageSize = parseInt(queries().pageSize);
+      const pageCount = Math.floor(allItemsCount / pageSize);
+      const leftoverItemsCount = allItemsCount % pageSize;
+
+      if (handlePageIfEmpty(allItemsCount)) {
+        console.log('calisti true');
+        for (let pageNumber = 0; pageNumber < pageCount; pageNumber++) {
+          for (let item = 0; item < pageSize; item++) {
+            const itemIndex = item + pageNumber * pageSize;
+
+            singlePage.push(...list.slice(itemIndex, itemIndex + 1));
+          }
+          allPages.push(singlePage);
+          singlePage = [];
+        }
+
+        if (leftoverItemsCount !== 0) {
+          singlePage.push(...list.slice(allItemsCount - leftoverItemsCount, allItemsCount));
+          allPages.push(singlePage);
+        }
+        setPaginatedUsers(allPages);
+      }
+    }
+  }
+  const [paginatedUsers, setPaginatedUsers] = useState([]);
+
+  const routeWithValidQueries = (page, pageSize, search) =>
+    `/students?page=${page || queries().page}&pageSize=${pageSize || queries().pageSize}${
+      search ? '&search=' + encodeURIComponent(search) : ''
+    }`;
   const tableTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
-  const userProperties = ['fullName', 'email', 'phone', 'domain', 'companyName'];
+  const userPropertiesToList = ['fullName', 'email', 'phone', 'domain', 'companyName'];
   const [isEditable, setIsEditable] = useState(false);
   const [initialUserData, setInitialUserData] = useState({});
   const [editedUserData, setEditedUserData] = useState({
@@ -91,29 +151,48 @@ export default function Students() {
 
   const searchInput = useRef(null);
   function search(query) {
+    const decodedQuery = decodeURIComponent(query);
     const options = {
-      keys: ['firstName', 'lastName', 'email', 'domain', 'phone', 'companyName'],
+      keys: ['firstName', 'lastName', 'fullName', 'email', 'domain', 'phone', 'companyName'],
       isCaseSensitive: false,
       minMatchCharLength: 2,
       shouldSort: true,
-      threshold: 0.2,
+      threshold: 0.1,
     };
 
     const fuse = new Fuse(usersData.users, options);
-    const searchResult = fuse.search(query);
-    setSearchedStudents(searchResult);
+    const searchResult = fuse.search(decodedQuery).map((result) => {
+      return result.item;
+    });
+    paginateTheList(searchResult);
 
     if (searchResult.length === 0) {
       toast.info('No related results were found with the search query');
-    } else console.log(searchedStudents);
+    }
+    return searchResult;
   }
 
   const fetcher = (...args) => fetch(...args).then((res) => res.json());
-  const { data: usersData, error, isLoading: areUsersFetched } = useSWR(requestLink, fetcher);
+  const { data, error, isLoading: isFetching } = useSWR('/api/getUsers', fetcher);
   const [isLoading, setIsLoading] = useState(true);
+  const [usersData, setUsersData] = useState({});
   useEffect(() => {
-    setIsLoading(areUsersFetched);
-  }, [areUsersFetched]);
+    if (!isFetching) {
+      setUsersData(data);
+    }
+  }, [isFetching]);
+  useEffect(() => {
+    if (queries().search && usersData.ok) {
+      search(queries().search);
+    } else if (!queries().search) {
+      paginateTheList(usersData.users);
+    }
+  }, [usersData]);
+  useEffect(() => {
+    if (paginatedUsers.length > 0) {
+      setIsLoading(false);
+    }
+  }, [paginatedUsers]);
   const [cachedUser, setCachedUser] = useState({});
   function prepareForEditing(userToEdit) {
     usersData.users.forEach((user) => {
@@ -182,7 +261,7 @@ export default function Students() {
     return isValid;
   }
 
-  function showMessageOnError(userData) {
+  function showMessageOnValidationError(userData) {
     isFirstNameValid(userData.firstName);
     isLastNameValid(userData.lastName);
     isEmailValid(userData.email);
@@ -192,7 +271,7 @@ export default function Students() {
   }
 
   function isFormDataValid(userData) {
-    showMessageOnError(userData);
+    showMessageOnValidationError(userData);
 
     return (
       isFirstNameValid(userData.firstName) &&
@@ -287,24 +366,31 @@ export default function Students() {
     }
   }
 
-  function updateStudents(editedUser, updatingMethod) {
+  function updateStudents(cachedUser, updatingMethod) {
+    let updatedUsersData;
     setIsEditable(false);
+
     if (updatingMethod === 'change') {
-      editedUser.id = editedUserData.id;
-      usersData.users = usersData.users.map((user) => {
-        if (user.id === editedUser.id) {
-          return editedUser;
+      cachedUser.id = editedUserData.id;
+      updatedUsersData = usersData.users.map((user) => {
+        if (user.id === cachedUser.id) {
+          return cachedUser;
         } else return user;
       });
+      setUsersData({ ...usersData, users: updatedUsersData });
     } else if (updatingMethod === 'delete') {
-      usersData.users.forEach((user) => {
-        if (user.id === editedUser.id) {
-          usersData.users.splice(usersData.users.indexOf(user), 1);
+      usersData.users.every((user) => {
+        if (user.id === cachedUser.id) {
+          updatedUsersData = usersData.users.toSpliced(usersData.users.indexOf(user), 1);
+          setUsersData({ ...usersData, users: updatedUsersData });
+          return false;
         }
+        return true;
       });
     } else if (updatingMethod === 'create') {
       const id = usersData.users.length + 1;
-      usersData.users.unshift({ ...editedUser, id: id });
+      updatedUsersData = [{ ...cachedUser, id }].concat(usersData.users);
+      setUsersData({ ...usersData, users: updatedUsersData });
     }
   }
 
@@ -367,7 +453,7 @@ export default function Students() {
         surname='Doe'
         role='Admin'
       />
-      <main className='w-full h-full flex flex-col min-h-screen'>
+      <main className='w-full h-full min-h-screen'>
         <TopBar />
         <section className='px-10 py-4 w-full h-full'>
           <div className='flex justify-between items-center'>
@@ -378,7 +464,7 @@ export default function Students() {
                   ref={searchInput}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
-                      search(searchInput.current.value);
+                      router.push(routeWithValidQueries('', '', searchInput.current.value));
                     }
                   }}
                   type='text'
@@ -387,7 +473,7 @@ export default function Students() {
                 />
                 <button
                   onClick={() => {
-                    search(searchInput.current.value);
+                    router.push(routeWithValidQueries('', '', searchInput.current.value));
                   }}
                   className='px-4 border-l-2 border-borderColor'
                 >
@@ -405,9 +491,7 @@ export default function Students() {
               </button>
             </div>
           </div>
-
           <hr className='my-4' />
-
           <div className='pl-28 flex text-xs gap-x-7 leading-4 font-semibold text-tableCaptionColor'>
             {tableTitles.map((title) => {
               return (
@@ -420,12 +504,10 @@ export default function Students() {
               );
             })}
           </div>
-
           <div className='py-4  flex flex-col gap-y-3'>
             {!isLoading &&
               usersData?.ok &&
-              searchedStudents.length < 1 &&
-              usersData.users.map((user) => {
+              paginatedUsers[queries().page - 1].map((user) => {
                 user.fullName = `${user.firstName} ${user.lastName}`;
                 user.companyName = user.company.name;
 
@@ -441,7 +523,7 @@ export default function Students() {
                       height='70'
                       className='w-[70px] h-[70px] rounded-lg object-cover object-center'
                     />
-                    {userProperties.map((property) => {
+                    {userPropertiesToList.map((property) => {
                       return (
                         <div
                           key={property + user.id}
@@ -472,59 +554,74 @@ export default function Students() {
                   </div>
                 );
               })}
-            {isLoading && (
-              <div className='w-screen h-screen absolute top-0 left-0 z-20 flex items-center justify-center bg-black/40'>
-                <div className='w-44 flex items-center'>
-                  <LoadingIcon />
-                </div>
-              </div>
-            )}
-            {searchedStudents.length > 0 &&
-              searchedStudents.map((user) => {
-                return (
-                  <div
-                    key={user.item.id + user.item.phone}
-                    className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
-                  >
-                    <img
-                      src={user.item.image || '/images/dummyPersonImage.webp'}
-                      alt={user.item.fullName}
-                      width='70'
-                      height='70'
-                      className='w-[70px] h-[70px] rounded-lg object-cover object-center'
-                    />
-                    {userProperties.map((property) => {
-                      return (
-                        <div
-                          key={property + user.item.id}
-                          className='w-2/12 px-4 py-2 truncate text-left rounded-md'
-                        >
-                          {user.item[property]}
-                        </div>
-                      );
-                    })}
-                    <div className='pr-4 space-x-10 flex justify-center items-center'>
-                      <button
-                        onClick={() => {
-                          prepareForEditing(user.item);
-                        }}
-                        className='active:scale-75 transition-all duration-200'
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        onClick={() => {
-                          deleteUser(user.item);
-                        }}
-                        className='active:scale-75 transition-all duration-200'
-                      >
-                        <DeleteIcon />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
           </div>
+          <div className='mt-4 flex justify-end'>
+            <p className='text-sm text-fadedTextColor-darker'>Rows per page:</p>
+            <label
+              htmlFor='pageSizeSelectMenu'
+              className='relative'
+            >
+              <select
+                id='pageSizeSelectMenu'
+                onChange={(event) => {
+                  {
+                    router.push(
+                      routeWithValidQueries('', event.target.value, searchInput.current.value)
+                    );
+                  }
+                }}
+                className='w-10 z-10 relative text-sm outline-none text-center bg-transparent appearance-none text-selectMenuColor cursor-pointer'
+                value={router.query.pageSize}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+                <option value={6}>6</option>
+                <option value={7}>7</option>
+                <option value={8}>8</option>
+                <option value={9}>9</option>
+                <option value={10}>10</option>
+              </select>
+              <div className='absolute right-0 z-0 top-[5px]'>
+                <DropdownIcon />
+              </div>
+            </label>
+            <p className='ml-14 mr-4 text-sm text-fadedTextColor-darker'>1-6 of 100</p>
+            <div className='-mt-1 flex justify-center items-center'>
+              <button
+                onClick={() => {
+                  const page = parseInt(queries().page);
+                  if (page > 1) {
+                    router.push(routeWithValidQueries(page - 1));
+                  }
+                }}
+                className={`cursor-pointer transition-all duration-200 active:scale-75 ${
+                  parseInt(queries().page) < 2 ? 'opacity-30' : 'opacity-100'
+                }`}
+              >
+                <LeftArrowIcon />
+              </button>
+              <button
+                onClick={() => {
+                  const page = parseInt(queries().page);
+                  const pageSize = parseInt(queries().pageSize);
+                  if (Math.floor(100 / pageSize > page)) {
+                    router.push(routeWithValidQueries(page + 1));
+                  }
+                }}
+                className={`ml-4 rotate-180 cursor-pointer transition-all duration-300 active:scale-75 ${
+                  Math.floor(100 / parseInt(queries().pageSize) < parseInt(queries().page))
+                    ? 'opacity-30'
+                    : 'opacity-100'
+                }`}
+              >
+                <RightArrowIcon />
+              </button>
+            </div>
+          </div>
+          <div className='h-8 bg-transparent' />
         </section>
 
         <div
@@ -551,6 +648,16 @@ export default function Students() {
           <p className='px-8 py-1 rounded-b-md bg-black/50 text-white text-xs shadow-form'>
             Click outside of the form to close it
           </p>
+        </div>
+
+        <div
+          className={`w-screen h-screen absolute top-0 left-0 z-20 flex items-center justify-center bg-black/40 transition-all duration-300 ${
+            isLoading ? 'opacity-100 visible' : 'opacity-0 invisible'
+          }`}
+        >
+          <div className='w-44 flex items-center'>
+            <LoadingIcon />
+          </div>
         </div>
       </main>
     </div>
