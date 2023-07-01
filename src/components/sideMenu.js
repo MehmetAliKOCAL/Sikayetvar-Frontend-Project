@@ -55,7 +55,7 @@ export default function SideMenu({ userImage, name, surname, role }) {
   };
 
   return (
-    <div className='flex sticky top-0 left-0'>
+    <div className='flex sticky top-0 left-0 z-30'>
       <aside
         className={`px-3 py-5 w-68 z-10 flex-shrink-0 h-screen overflow-y-auto flex flex-col items-center justify-center transition-all duration-300 bg-themeColor-faded max-md:absolute ${
           isMenuVisible ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'
@@ -106,16 +106,19 @@ export default function SideMenu({ userImage, name, surname, role }) {
         onClick={() => {
           setIsMenuVisible(!isMenuVisible);
         }}
-        className={`w-fit z-10 flex md:hidden border-l-1 border-black/5 bg-themeColor-faded items-start transition-all duration-300 ${
+        className={`w-fit z-10 flex md:hidden bg-themeColor-faded items-start transition-all duration-300 outline-none ${
           isMenuVisible ? 'max-md:translate-x-[270px]' : 'max-md:-translate-x-0'
         }`}
       >
         <div className='p-3 bg-themeColor/80'>
           <HamburgerMenuIcon isMenuOpened={isMenuVisible} />
-        </div>{' '}
+        </div>
       </button>
-      <div
-        className={`w-full h-screen p-4 z-0 absolute md:hidden bg-black/40 transition-all duration-300 ${
+      <button
+        onClick={() => {
+          setIsMenuVisible(!isMenuVisible);
+        }}
+        className={`w-screen h-screen p-4 z-0 absolute md:hidden bg-black/40 transition-all duration-300 ${
           isMenuVisible ? 'visible opacity-100' : 'invisible opacity-0'
         }`}
       />

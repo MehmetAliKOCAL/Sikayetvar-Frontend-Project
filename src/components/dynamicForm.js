@@ -12,7 +12,7 @@ export default function DynamicForm({
       onClick={() => {
         event.preventDefault();
       }}
-      className='z-10 p-8 max-xs:p-4 w-1/4 relative flex flex-col gap-y-2 bg-white text-black shadow-form xs:rounded-[20px]'
+      className='z-40 p-8 max-xs:p-4 w-[450px] max-xs:w-full relative flex flex-col gap-y-2 bg-white text-black shadow-form xs:rounded-[20px]'
     >
       <h1 className='pl-3 mb-6 w-fit mx-auto text-2xl h-8 flex justify-center items-center font-bold uppercase border-l-6 border-themeColor-lighter text-center'>
         {formTitle}
