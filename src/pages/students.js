@@ -115,9 +115,9 @@ export default function Students() {
     setIsLoading(areUsersFetched);
   }, [areUsersFetched]);
   const [cachedUser, setCachedUser] = useState({});
-  function prepareForEditing(userID) {
+  function prepareForEditing(userToEdit) {
     usersData.users.forEach((user) => {
-      if (user.id === userID) {
+      if (user === userToEdit) {
         setInitialUserData(user);
         setEditedUserData(user);
       }
@@ -303,7 +303,8 @@ export default function Students() {
         }
       });
     } else if (updatingMethod === 'create') {
-      usersData.users.unshift({ ...editedUser, id: usersData.users.length + 1 });
+      const id = usersData.users.length + 1;
+      usersData.users.unshift({ ...editedUser, id: id });
     }
   }
 
@@ -375,7 +376,7 @@ export default function Students() {
               <div className='bg-white rounded-md flex justify-center items-center flex-shrink-0 border-1 border-borderColor'>
                 <input
                   ref={searchInput}
-                  onKeyPress={(event) => {
+                  onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       search(searchInput.current.value);
                     }
@@ -430,7 +431,7 @@ export default function Students() {
 
                 return (
                   <div
-                    key={user.id + user.phone}
+                    key={JSON.stringify(user)}
                     className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
                   >
                     <img
@@ -453,7 +454,7 @@ export default function Students() {
                     <div className='pr-4 space-x-10 flex justify-center items-center'>
                       <button
                         onClick={() => {
-                          prepareForEditing(user.id);
+                          prepareForEditing(user);
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
@@ -505,7 +506,7 @@ export default function Students() {
                     <div className='pr-4 space-x-10 flex justify-center items-center'>
                       <button
                         onClick={() => {
-                          prepareForEditing(user.item.id);
+                          prepareForEditing(user.item);
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
