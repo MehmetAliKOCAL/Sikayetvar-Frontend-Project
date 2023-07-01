@@ -15,6 +15,7 @@ import LoadingIcon from '@/components/icons/loading';
 import DropdownIcon from '@/components/icons/dropdown';
 import LeftArrowIcon from '@/components/icons/arrowLeft';
 import RightArrowIcon from '@/components/icons/arrowLeft';
+import AdditionIcon from '@/components/icons/additionIcon';
 
 export default function Students() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function Students() {
       search ? '&search=' + encodeURIComponent(search) : ''
     }`;
   const tableTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
-  const userPropertiesToList = ['fullName', 'email', 'phone', 'domain', 'companyName'];
+  const userProperties = ['fullName', 'email', 'phone', 'domain', 'companyName'];
   const [isEditable, setIsEditable] = useState(false);
   const [initialUserData, setInitialUserData] = useState({});
   const [editedUserData, setEditedUserData] = useState({
@@ -456,10 +457,21 @@ export default function Students() {
       <main className='w-full h-full min-h-screen'>
         <TopBar />
         <section className='px-10 py-4 w-full h-full'>
-          <div className='flex justify-between items-center'>
-            <p className='text-xl leading-4 font-bold'>Students List</p>
-            <div className='flex gap-x-6 justify-center items-center'>
-              <div className='bg-white rounded-md flex justify-center items-center flex-shrink-0 border-1 border-borderColor'>
+          <div className='flex justify-between items-center max-sm:flex-col max-sm:gap-y-4 max-sm:py-4 max-xs:gap-y-2'>
+            <div className='max-xs:w-full max-xs:flex max-xs:justify-between max-xs:items-center'>
+              <p className='text-xl leading-4 font-bold'>Students List</p>
+              <button
+                onClick={() => {
+                  setIsEditable(true);
+                  setFormType('forCreating');
+                }}
+                className='py-0.5 px-3 text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 active:scale-95 xs:hidden'
+              >
+                <AdditionIcon className='w-6 h-6' />
+              </button>
+            </div>
+            <div className='flex gap-x-6 justify-center items-center max-lg:gap-x-3 max-xs:w-full'>
+              <div className='bg-white rounded-md flex justify-center items-center flex-shrink-0 border-1 border-borderColor max-xs:w-full'>
                 <input
                   ref={searchInput}
                   onKeyDown={(event) => {
@@ -469,7 +481,7 @@ export default function Students() {
                   }}
                   type='text'
                   placeholder='Search...'
-                  className='py-2.5 px-4 rounded-lg outline-none text-sm placeholder:text-inputPlaceholderColor'
+                  className='py-2.5 px-4 rounded-lg outline-none text-sm placeholder:text-inputPlaceholderColor max-xs:w-full'
                 />
                 <button
                   onClick={() => {
@@ -485,14 +497,15 @@ export default function Students() {
                   setIsEditable(true);
                   setFormType('forCreating');
                 }}
-                className='py-3 px-8 text-xs text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 active:scale-95'
+                className='py-3 px-8 text-xs text-white font-medium rounded-md uppercase bg-themeColor transition-all duration-200 active:scale-95 max-lg:py-2 max-lg:px-4 max-xs:hidden'
               >
-                Add New Student
+                <p className='max-lg:hidden'>Add New Student</p>
+                <AdditionIcon className='w-6 h-6 lg:hidden' />
               </button>
             </div>
           </div>
           <hr className='my-4' />
-          <div className='pl-28 flex text-xs gap-x-7 leading-4 font-semibold text-tableCaptionColor'>
+          <div className='pl-28 flex text-xs gap-x-7 leading-4 font-semibold text-tableCaptionColor max-lg/xl:hidden'>
             {tableTitles.map((title) => {
               return (
                 <p
@@ -504,7 +517,7 @@ export default function Students() {
               );
             })}
           </div>
-          <div className='py-4  flex flex-col gap-y-3'>
+          <div className='py-4 flex flex-col gap-y-3'>
             {!isLoading &&
               usersData?.ok &&
               paginatedUsers[queries().page - 1].map((user) => {
@@ -514,26 +527,35 @@ export default function Students() {
                 return (
                   <div
                     key={JSON.stringify(user)}
-                    className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
+                    className='p-4 max-lg/xl:px-0 relative max-lg/xl:pt-0 w-full flex justify-between items-center gap-x-3 bg-white rounded-lg shadow-form  max-lg/xl:flex-col'
                   >
-                    <img
-                      src={user.image || '/images/dummyPersonImage.webp'}
-                      alt={user.fullName}
-                      width='70'
-                      height='70'
-                      className='w-[70px] h-[70px] rounded-lg object-cover object-center'
-                    />
-                    {userPropertiesToList.map((property) => {
-                      return (
-                        <div
-                          key={property + user.id}
-                          className='w-2/12 px-4 py-2 truncate text-left rounded-md'
-                        >
-                          {user[property]}
-                        </div>
-                      );
-                    })}
-                    <div className='pr-4 space-x-10 flex justify-center items-center'>
+                    <div className='w-full flex justify-center items-center max-lg/xl:flex-col'>
+                      <img
+                        src={user.image || '/images/dummyPersonImage.webp'}
+                        alt={user.fullName}
+                        width='70'
+                        height='70'
+                        className='w-[70px] h-[70px] rounded-lg object-cover object-center bg-white max-lg/xl:bg-gradient-134deg max-lg/xl:from-orange-500/90 max-lg/xl:to-yellow-400/60 max-lg/xl:rounded-b-none max-lg/xl:w-full max-lg/xl:h-[200px] max-lg/xl:mb-3'
+                      />
+                      <div className='w-full grid grid-flow-col grid-cols-5 grid-rows-1 max-lg/xl:grid-flow-row max-lg/xl:grid-rows-5 max-lg/xl:grid-cols-1 max-lg/xl:px-4'>
+                        {userProperties.map((property) => {
+                          return (
+                            <div className='w-full max-lg/xl:mt-5'>
+                              <p className='truncate px-4 text-xs leading-4 font-semibold text-tableCaptionColor lg/xl:hidden'>
+                                {tableTitles[userProperties.indexOf(property)]}
+                              </p>
+                              <p
+                                key={property + user.id}
+                                className='w-full px-4 py-2 max-lg/xl:pt-0 truncate text-left'
+                              >
+                                {user[property]}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className='pr-4 w-24 space-x-10 flex justify-center items-center max-lg/xl:flex-col max-lg/xl:absolute max-lg/xl:top-[240px] max-lg/xl:space-x-0 max-lg/xl:right-0 max-lg/xl:w-16 max-lg/xl:space-y-8'>
                       <button
                         onClick={() => {
                           prepareForEditing(user);
@@ -625,7 +647,7 @@ export default function Students() {
         </section>
 
         <div
-          className={`w-screen h-screen absolute top-0 right-0 flex flex-col py-10 justify-center items-center bg-black/40 transform-all duration-300 overflow-x-hidden overflow-y-auto ${
+          className={`z-40 w-screen h-screen absolute top-0 right-0 flex flex-col py-10 justify-center items-center bg-black/40 transform-all duration-300 overflow-x-hidden overflow-y-auto ${
             isEditable ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
         >
@@ -644,14 +666,13 @@ export default function Students() {
             inputOnChangeFunction={dynamicFormProps[formType].inputOnChangeFunction}
             submitButtonFunction={dynamicFormProps[formType].submitButtonFunction}
           />
-
           <p className='px-8 py-1 rounded-b-md bg-black/50 text-white text-xs shadow-form'>
             Click outside of the form to close it
           </p>
         </div>
 
         <div
-          className={`w-screen h-screen absolute top-0 left-0 z-20 flex items-center justify-center bg-black/40 transition-all duration-300 ${
+          className={`w-screen h-screen absolute top-0 left-0 z-50 flex items-center justify-center bg-black/40 transition-all duration-300 ${
             isLoading ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
         >
