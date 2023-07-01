@@ -1,0 +1,19 @@
+export default function RightArrowIcon() {
+  return (
+    <svg
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+    >
+      <g>
+        <path
+          d='M9 18L14.9293 12.0707C14.9683 12.0317 14.9683 11.9683 14.9293 11.9293L9 6'
+          stroke='#9FA2B4'
+          strokeWidth='2'
+          strokeLinecap='round'
+        />
+      </g>
+    </svg>
+  );
+}
