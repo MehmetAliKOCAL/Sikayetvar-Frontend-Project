@@ -1,14 +1,16 @@
-import '@/styles/globals.css';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { Montserrat } from 'next/font/google';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { Montserrat } from 'next/font/google';
+import { ToastContainer } from 'react-toastify';
+import '@/styles/globals.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
 });
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
   return (
     <div className={`${montserrat.className}`}>
       <Head>
@@ -53,7 +55,10 @@ export default function App({ Component, pageProps }) {
           content='website'
         />
       </Head>
-      <Component {...pageProps} />{' '}
+      <Component
+        key={router.query?.page + router.query.pageSize + router.query?.search}
+        {...pageProps}
+      />
       <ToastContainer
         position='bottom-right'
         autoClose={3000}
