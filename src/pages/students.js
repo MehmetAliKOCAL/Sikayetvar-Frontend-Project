@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -10,6 +10,7 @@ import SideMenu from '@/components/sideMenu';
 import EditIcon from '@/components/icons/edit';
 import DeleteIcon from '@/components/icons/delete';
 import DynamicForm from '@/components/dynamicForm';
+import SearchIcon from '@/components/icons/search';
 import LoadingIcon from '@/components/icons/loading';
 
 export default function Students() {
@@ -88,13 +89,14 @@ export default function Students() {
     },
   ];
 
+  const searchInput = useRef(null);
   function search(query) {
     const options = {
-      keys: all,
+      keys: ['firstName', 'lastName', 'email', 'domain', 'phone', 'companyName'],
       isCaseSensitive: false,
       minMatchCharLength: 2,
       shouldSort: true,
-      threshold: 0.3,
+      threshold: 0.2,
     };
 
     const fuse = new Fuse(usersData.users, options);
@@ -103,7 +105,7 @@ export default function Students() {
 
     if (searchResult.length === 0) {
       toast.info('No related results were found with the search query');
-    }
+    } else console.log(searchedStudents);
   }
 
   const fetcher = (...args) => fetch(...args).then((res) => res.json());
@@ -112,18 +114,16 @@ export default function Students() {
   useEffect(() => {
     setIsLoading(areUsersFetched);
   }, [areUsersFetched]);
-
-  function allowEditingOrCreating(userID, action) {
-    if (action === 'edit') {
-      usersData.users.forEach((user) => {
-        if (user.id === userID) {
-          setInitialUserData(user);
-          setEditedUserData(user);
-        }
-      });
-      setIsEditable(true);
-    } else if (action === 'create') {
-    }
+  const [cachedUser, setCachedUser] = useState({});
+  function prepareForEditing(userID) {
+    usersData.users.forEach((user) => {
+      if (user.id === userID) {
+        setInitialUserData(user);
+        setEditedUserData(user);
+      }
+    });
+    setIsEditable(true);
+    setFormType('forEditing');
   }
 
   function isFirstNameValid(fistName) {
@@ -143,8 +143,16 @@ export default function Students() {
   }
 
   function areThereEmptyInputs(data) {
-    const isValid = !Object.values(data).includes('');
-    if (!isValid) {
+    const dataToValidate = [
+      data.firstName,
+      data.lastName,
+      data.email,
+      data.phone,
+      data.domain,
+      data.companyName,
+    ];
+    const isValid = dataToValidate.includes('');
+    if (isValid) {
       toast.error('Please fill out all input-fields');
     }
     return isValid;
@@ -174,13 +182,17 @@ export default function Students() {
     return isValid;
   }
 
-  function isFormDataValid(userData) {
+  function showMessageOnError(userData) {
     isFirstNameValid(userData.firstName);
     isLastNameValid(userData.lastName);
     isEmailValid(userData.email);
     isPhoneValid(userData.phone);
     isWebsiteValid(userData.domain);
     areThereEmptyInputs(userData);
+  }
+
+  function isFormDataValid(userData) {
+    showMessageOnError(userData);
 
     return (
       isFirstNameValid(userData.firstName) &&
@@ -188,7 +200,7 @@ export default function Students() {
       isEmailValid(userData.email) &&
       isPhoneValid(userData.phone) &&
       isWebsiteValid(userData.domain) &&
-      areThereEmptyInputs(userData)
+      !areThereEmptyInputs(userData)
     );
   }
 
@@ -196,14 +208,16 @@ export default function Students() {
     if (isFormDataValid(userData)) {
       setIsLoading(true);
 
-      const query = encodeURIComponent(JSON.stringify(newUserData));
+      const query = encodeURIComponent(
+        JSON.stringify({ ...userData, company: { name: userData.companyName } })
+      );
       const response = await fetch(`/api/createUser?userData=${query}`, {
         method: 'POST',
       }).then((res) => {
         return res.json();
       });
 
-      showResult(response, 'create');
+      showResult(response, 'create', 'User created successfully');
     }
   }
 
@@ -248,28 +262,35 @@ export default function Students() {
   async function editUser(user) {
     if (isFormDataValid(user)) {
       setIsLoading(true);
-      const userQuery = encodeURIComponent(
-        JSON.stringify({
+      const userQuery = () => {
+        const queryObject = {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
           phone: user.phone,
           domain: user.domain,
           company: { name: user.companyName },
-        })
-      );
+        };
 
-      const response = await fetch(`/api/updateUser?id=${user.id}&user=${userQuery}`).then((res) =>
-        res.json()
-      );
+        if (user.id >= 101) {
+          queryObject.id = Math.ceil(Math.random() * 100);
+        } else {
+          queryObject.id = editedUserData.id;
+        }
+        return encodeURIComponent(JSON.stringify(queryObject));
+      };
 
-      showResult(response, 'change');
+      const response = await fetch(`/api/updateUser?id=${user.id}&user=${userQuery()}`).then(
+        (res) => res.json()
+      );
+      showResult(response, 'change', 'User updated successfully');
     }
   }
 
   function updateStudents(editedUser, updatingMethod) {
     setIsEditable(false);
     if (updatingMethod === 'change') {
+      editedUser.id = editedUserData.id;
       usersData.users = usersData.users.map((user) => {
         if (user.id === editedUser.id) {
           return editedUser;
@@ -282,22 +303,22 @@ export default function Students() {
         }
       });
     } else if (updatingMethod === 'create') {
-      usersData.users.unshift(editedUser);
+      usersData.users.unshift({ ...editedUser, id: usersData.users.length + 1 });
     }
   }
 
-  function showResult(response, updatingMethod) {
+  function showResult(response, updatingMethod, successMessage) {
     setIsLoading(false);
     if (response.ok) {
-      toast.success('User updated Successfully');
+      toast.success(successMessage);
       updateStudents(response.data, updatingMethod);
     } else {
-      toast.error(response.message);
+      toast.error(response.message || response.data.message);
     }
   }
 
-  async function deleteUser(userID) {
-    const areYouSure = await Swal.fire({
+  async function areYouSure() {
+    return await Swal.fire({
       icon: 'question',
       title: 'Are You Sure?',
       text: "This action will delete the user data and can't be reverted.",
@@ -305,17 +326,24 @@ export default function Students() {
       showDenyButton: true,
       confirmButtonText: 'Yes, delete it',
       denyButtonText: 'Cancel',
-    }).then((result) => {
-      return result.value;
+    }).then(async (result) => {
+      return await result.value;
     });
+  }
 
-    if (areYouSure) {
+  async function deleteUser(userData) {
+    const isDecisionCertain = await areYouSure();
+    if (isDecisionCertain && userData.id < 101) {
       setIsLoading(true);
-      const response = await fetch(`/api/deleteUser?id=${userID}`).then((res) => {
+      const response = await fetch(`/api/deleteUser?id=${userData.id}`).then((res) => {
         return res.json();
       });
-
-      showResult(response, 'delete');
+      showResult(response, 'delete', 'User deleted successfully');
+    } else if (isDecisionCertain) {
+      setIsLoading(true);
+      setTimeout(() => {
+        showResult({ ok: true, data: userData }, 'delete', 'User deleted successfully');
+      }, 500);
     }
   }
 
@@ -344,11 +372,27 @@ export default function Students() {
           <div className='flex justify-between items-center'>
             <p className='text-xl leading-4 font-bold'>Students List</p>
             <div className='flex gap-x-6 justify-center items-center'>
-              <input
-                type='text'
-                placeholder='Search...'
-                className='py-2.5 px-4 rounded-lg border-1 border-borderColor outline-none text-sm placeholder:text-inputPlaceholderColor'
-              />
+              <div className='bg-white rounded-md flex justify-center items-center flex-shrink-0 border-1 border-borderColor'>
+                <input
+                  ref={searchInput}
+                  onKeyPress={(event) => {
+                    if (event.key === 'Enter') {
+                      search(searchInput.current.value);
+                    }
+                  }}
+                  type='text'
+                  placeholder='Search...'
+                  className='py-2.5 px-4 rounded-lg outline-none text-sm placeholder:text-inputPlaceholderColor'
+                />
+                <button
+                  onClick={() => {
+                    search(searchInput.current.value);
+                  }}
+                  className='px-4 border-l-2 border-borderColor'
+                >
+                  <SearchIcon />
+                </button>
+              </div>
               <button
                 onClick={() => {
                   setIsEditable(true);
@@ -379,13 +423,14 @@ export default function Students() {
           <div className='py-4  flex flex-col gap-y-3'>
             {!isLoading &&
               usersData?.ok &&
+              searchedStudents.length < 1 &&
               usersData.users.map((user) => {
                 user.fullName = `${user.firstName} ${user.lastName}`;
                 user.companyName = user.company.name;
 
                 return (
                   <div
-                    key={user.id}
+                    key={user.id + user.phone}
                     className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
                   >
                     <img
@@ -405,10 +450,10 @@ export default function Students() {
                         </div>
                       );
                     })}
-                    <div className='space-x-10'>
+                    <div className='pr-4 space-x-10 flex justify-center items-center'>
                       <button
                         onClick={() => {
-                          allowEditingOrCreating(user.id, 'edit');
+                          prepareForEditing(user.id);
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
@@ -416,7 +461,7 @@ export default function Students() {
                       </button>
                       <button
                         onClick={() => {
-                          deleteUser(user.id);
+                          deleteUser(user);
                         }}
                         className='active:scale-75 transition-all duration-200'
                       >
@@ -433,6 +478,51 @@ export default function Students() {
                 </div>
               </div>
             )}
+            {searchedStudents.length > 0 &&
+              searchedStudents.map((user) => {
+                return (
+                  <div
+                    key={user.item.id + user.item.phone}
+                    className='p-4 w-full flex items-center gap-x-3 bg-white rounded-lg'
+                  >
+                    <img
+                      src={user.item.image || '/images/dummyPersonImage.webp'}
+                      alt={user.item.fullName}
+                      width='70'
+                      height='70'
+                      className='w-[70px] h-[70px] rounded-lg object-cover object-center'
+                    />
+                    {userProperties.map((property) => {
+                      return (
+                        <div
+                          key={property + user.item.id}
+                          className='w-2/12 px-4 py-2 truncate text-left rounded-md'
+                        >
+                          {user.item[property]}
+                        </div>
+                      );
+                    })}
+                    <div className='pr-4 space-x-10 flex justify-center items-center'>
+                      <button
+                        onClick={() => {
+                          prepareForEditing(user.item.id);
+                        }}
+                        className='active:scale-75 transition-all duration-200'
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        onClick={() => {
+                          deleteUser(user.item);
+                        }}
+                        className='active:scale-75 transition-all duration-200'
+                      >
+                        <DeleteIcon />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </section>
 
