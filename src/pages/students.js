@@ -540,7 +540,10 @@ export default function Students() {
                       <div className='w-full grid grid-flow-col grid-cols-5 grid-rows-1 max-lg/xl:grid-flow-row max-lg/xl:grid-rows-5 max-lg/xl:grid-cols-1 max-lg/xl:px-4'>
                         {userProperties.map((property) => {
                           return (
-                            <div className='w-full max-lg/xl:mt-5'>
+                            <div
+                              key={property}
+                              className='w-full max-lg/xl:mt-5'
+                            >
                               <p className='truncate px-4 text-xs leading-4 font-semibold text-tableCaptionColor lg/xl:hidden'>
                                 {tableTitles[userProperties.indexOf(property)]}
                               </p>
