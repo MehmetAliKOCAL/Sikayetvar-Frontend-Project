@@ -68,6 +68,7 @@ export default function SideMenu({ userImage, name, surname, role }) {
           width='150'
           height='150'
           src={userImage || ''}
+          alt='Dummy Avatar'
           className='w-[150px] h-[150px] mt-14 rounded-full object-cover object-center'
         />
         <p className='mt-4 text-lg font-bold'>{`${capitalize(name)} ${capitalize(surname)}`}</p>
