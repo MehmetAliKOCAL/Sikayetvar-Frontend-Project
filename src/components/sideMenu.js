@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import HomeIcon from './icons/home';
 import ReportIcon from './icons/report';
 import LogoutIcon from './icons/logout';
@@ -29,6 +30,7 @@ export default function SideMenu({ userImage, name, surname, role }) {
     {
       text: 'Students',
       redirectTo: '/students',
+      query: { page: '1', pageSize: '6' },
       icon: <GraduationIcon />,
     },
     {
@@ -64,10 +66,12 @@ export default function SideMenu({ userImage, name, surname, role }) {
         <h1 className='pl-2 h-6 flex justify-center items-center uppercase text-xl font-bold text-center border-l-4 border-themeColor-lighter'>
           Manage Courses
         </h1>
-        <img
-          width='150'
-          height='150'
-          src={userImage || ''}
+        <Image
+          width={150}
+          height={150}
+          src={userImage || '/images/dummyPersonImage.webp'}
+          placeholder='blur'
+          blurDataURL='/images/dummyPersonImage.webp'
           alt='Dummy Avatar'
           className='w-[150px] h-[150px] mt-14 rounded-full object-cover object-center'
         />
@@ -80,8 +84,12 @@ export default function SideMenu({ userImage, name, surname, role }) {
                 key={button.text}
                 href={{
                   pathname: button.redirectTo,
+                  query: button.query,
                 }}
-                className={`py-3 w-5/6 flex gap-x-5 px-10 rounded-md transition-colors duration-200 hover:bg-themeColor-lighter/30 active:bg-themeColor ${
+                onClick={(event) => {
+                  if (!button.redirectTo) event.preventDefault();
+                }}
+                className={`py-3 w-5/6 flex gap-x-5 px-10 rounded-md transition-colors duration-200 hover:bg-themeColor/40 active:bg-themeColor ${
                   currentRoute === button.redirectTo ? 'bg-themeColor' : 'bg-themeColor-faded'
                 }`}
               >
@@ -95,7 +103,7 @@ export default function SideMenu({ userImage, name, surname, role }) {
           onClick={() => {
             router.push('/');
           }}
-          className='mt-28 py-3 w-5/6 flex justify-center items-center gap-x-5 px-10 rounded-md transition-colors duration-200 hover:bg-themeColor-lighter/30 active:bg-themeColor'
+          className='mt-28 py-3 w-5/6 flex justify-center items-center gap-x-5 px-10 rounded-md transition-colors duration-200 hover:bg-themeColor/40 active:bg-themeColor'
         >
           <p className='text-sm font-medium'>Logout</p>
           <div className='w-5 flex justify-center items-center'>
