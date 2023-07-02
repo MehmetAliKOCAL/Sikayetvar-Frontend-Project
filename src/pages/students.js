@@ -639,16 +639,14 @@ export default function Students() {
                   className='w-10 z-10 relative text-sm outline-none text-center bg-transparent appearance-none text-selectMenuColor cursor-pointer'
                   value={router.query.pageSize}
                 >
-                  <option value={1}>1</option>
-                  <option value={2}>2</option>
-                  <option value={3}>3</option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6</option>
-                  <option value={7}>7</option>
-                  <option value={8}>8</option>
-                  <option value={9}>9</option>
-                  <option value={10}>10</option>
+                  {[...Array(10)].map((elementInArray, index) => (
+                    <option
+                      key={index + 1}
+                      value={index + 1}
+                    >
+                      {index + 1}
+                    </option>
+                  ))}
                 </select>
                 <div className='absolute right-0 z-0 top-[5px]'>
                   <DropdownIcon />
