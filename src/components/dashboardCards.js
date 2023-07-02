@@ -8,7 +8,7 @@ export default function DashboardCards({ items }) {
           <Link
             id={card.title}
             key={card.title}
-            href={{ pathname: card.redirectTo }}
+            href={{ pathname: card.redirectTo, query: card.queries }}
             className={`w-64 h-40 p-4 rounded-lg flex flex-col justify-between cursor-pointer active:scale-90 hover:scale-95 transition-all duration-200 shadow-md shadow-gray-700/[10%] ${card.bgColor}`}
           >
             <div className='flex flex-col'>

@@ -20,6 +20,7 @@ export default function Dashboard() {
       count: '243',
       bgColor: 'bg-blue-50',
       redirectTo: '/students',
+      queries: { page: 1, pageSize: 6 },
     },
     {
       icon: (
