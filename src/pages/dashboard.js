@@ -17,7 +17,7 @@ export default function Dashboard() {
         />
       ),
       title: 'Students',
-      count: '243',
+      count: '100',
       bgColor: 'bg-blue-50',
       redirectTo: '/students',
       queries: { page: 1, pageSize: 6 },
