@@ -63,7 +63,7 @@ export default function Students() {
   let isInitialLoadAlreadyHandled = false;
   const tableTitles = ['Name', 'Email', 'Phone', 'Website', 'Company Name'];
   const userProperties = ['fullName', 'email', 'phone', 'domain', 'companyName'];
-  const searchInput = useRef(null);
+  const [searchInputValue, setSearchInputValue] = useState('');
   const [paginatedUsers, setPaginatedUsers] = useState([]);
   const [isEditable, setIsEditable] = useState(false);
   const [initialUserData, setInitialUserData] = useState({});
@@ -71,16 +71,8 @@ export default function Students() {
   const [isLoading, setIsLoading] = useState(true);
   const [usersData, setUsersData] = useState({});
   const isAtTheFirstPage = currentPage < 2;
-  const isAtTheLastPage = Math.floor(100 / currentPageSize < currentPage);
+  const [isAtTheLastPage, setIsAtTheLastPage] = useState(true);
   const [formType, setFormType] = useState('forEditing');
-  const [editedUserData, setEditedUserData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    domain: '',
-    companyName: '',
-  });
   const [newUserData, setNewUserData] = useState({
     firstName: '',
     lastName: '',
@@ -122,33 +114,30 @@ export default function Students() {
       placeholder: 'Doe Transportation',
     },
   ];
-  const dynamicFormProps = {
-    forEditing: {
-      formTitle: 'Edit The Student',
+
+  const dynamicFormProps = (formType) => {
+    const props = {
       inputsArray: inputsForEditingUsers,
-      placeholderData: initialUserData,
-      editableData: editedUserData,
-      submitButtonText: 'Save Changes',
-      inputOnChangeFunction: () =>
-        setEditedUserData({
-          ...editedUserData,
-          [event.target.id]: event.target.value,
-        }),
-      submitButtonFunction: () => editUser(editedUserData),
-    },
-    forCreating: {
-      formTitle: 'Add New Student',
-      inputsArray: inputsForEditingUsers,
-      placeholderData: '',
       editableData: newUserData,
-      submitButtonText: 'Create Student',
       inputOnChangeFunction: () =>
         setNewUserData({
           ...newUserData,
           [event.target.id]: event.target.value,
         }),
-      submitButtonFunction: () => createUser(newUserData),
-    },
+    };
+
+    if (formType === 'forEditing') {
+      props.formTitle = 'Edit The Student';
+      props.placeholderData = initialUserData;
+      props.submitButtonText = 'Save Changes';
+      props.submitButtonFunction = () => editUser(newUserData);
+    } else if (formType === 'forCreating') {
+      props.formTitle = 'Add New Student';
+      props.placeholderData = '';
+      props.submitButtonText = 'Create Student';
+      props.submitButtonFunction = () => createUser(newUserData);
+    }
+    return props;
   };
 
   useEffect(() => {
@@ -167,13 +156,23 @@ export default function Students() {
     }
   }, [usersData]);
   useEffect(() => {
+    handlePaginationText(paginatedUsers);
     if (paginatedUsers.length > 0) {
       setIsLoading(false);
     }
   }, [paginatedUsers]);
   useEffect(() => {
-    handlePaginationText(paginatedUsers);
-  }, [paginatedUsers]);
+    if (formType === 'forCreating') {
+      setNewUserData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        domain: '',
+        companyName: '',
+      });
+    }
+  }, [formType]);
 
   function handlePageIfEmpty(pageItemsCount) {
     const page = parseInt(queries()?.page);
@@ -196,6 +195,7 @@ export default function Students() {
       const allItemsCount = list.length;
       const pageCount = Math.floor(allItemsCount / currentPageSize);
       const leftoverItemsCount = allItemsCount % currentPageSize;
+      setIsAtTheLastPage(Math.floor(allItemsCount / currentPageSize <= currentPage));
 
       if (handlePageIfEmpty(allItemsCount)) {
         for (let pageNumber = 0; pageNumber < pageCount; pageNumber++) {
@@ -221,7 +221,7 @@ export default function Students() {
     usersData.users.forEach((user) => {
       if (user === userToEdit) {
         setInitialUserData(user);
-        setEditedUserData(user);
+        setNewUserData(user);
       }
     });
     setIsEditable(true);
@@ -261,7 +261,7 @@ export default function Students() {
         if (user.id >= 101) {
           queryObject.id = Math.ceil(Math.random() * 100);
         } else {
-          queryObject.id = editedUserData.id;
+          queryObject.id = newUserData.id;
         }
         return encodeURIComponent(JSON.stringify(queryObject));
       };
@@ -316,7 +316,7 @@ export default function Students() {
     setIsEditable(false);
 
     if (updatingMethod === 'change') {
-      cachedUser.id = editedUserData.id;
+      cachedUser.id = newUserData.id;
       updatedUsersData = usersData.users.map((user) => {
         if (user.id === cachedUser.id) {
           return cachedUser;
@@ -365,10 +365,15 @@ export default function Students() {
 
   function handlePageSwitching(direction) {
     if (direction === 'back' && currentPage > 1) {
-      router.push(routeWithValidQueries(currentPage - 1));
+      router.push(routeWithValidQueries(currentPage - 1, currentPageSize, queries().search));
     } else if (direction === 'forward' && !isAtTheLastPage) {
-      router.push(routeWithValidQueries(currentPage + 1));
+      router.push(routeWithValidQueries(currentPage + 1, currentPageSize, queries().search));
     }
+  }
+
+  function handlePageSizeChanging(event) {
+    const pageToRoute = Math.ceil((currentPage * currentPageSize) / event.target.value);
+    router.push(routeWithValidQueries(pageToRoute, event.target.value, queries().search));
   }
 
   function handlePaginationText(paginatedItemsList) {
@@ -509,23 +514,33 @@ export default function Students() {
             <div className='flex gap-x-6 justify-center items-center max-lg:gap-x-3 max-xs:w-full'>
               <div className='bg-white rounded-md flex justify-center items-center flex-shrink-0 border-1 border-borderColor max-xs:w-full'>
                 <input
-                  ref={searchInput}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
-                      router.push(routeWithValidQueries('', '', searchInput.current.value));
+                      router.push(routeWithValidQueries('', '', searchInputValue));
                     }
                   }}
                   type='text'
-                  placeholder='Search...'
+                  value={searchInputValue}
+                  onChange={(event) => {
+                    setSearchInputValue(event.target.value);
+                  }}
+                  placeholder={
+                    queries().search
+                      ? `Searched: ${decodeURIComponent(queries().search)}`
+                      : 'Search...'
+                  }
                   className='py-2.5 px-4 rounded-lg outline-none text-sm placeholder:text-inputPlaceholderColor max-xs:w-full'
                 />
                 <button
                   onClick={() => {
-                    router.push(routeWithValidQueries('', '', searchInput.current.value));
+                    if (queries().search && searchInputValue === '') {
+                      setSearchInputValue('');
+                    }
+                    router.push(routeWithValidQueries('', '', searchInputValue));
                   }}
                   className='px-4 border-l-2 border-borderColor'
                 >
-                  <SearchIcon />
+                  <SearchIcon isSearched={queries().search && searchInputValue === ''} />
                 </button>
               </div>
               <button
@@ -630,11 +645,7 @@ export default function Students() {
                 <select
                   id='pageSizeSelectMenu'
                   onChange={(event) => {
-                    {
-                      router.push(
-                        routeWithValidQueries('', event.target.value, searchInput.current.value)
-                      );
-                    }
+                    handlePageSizeChanging(event);
                   }}
                   className='w-10 z-10 relative text-sm outline-none text-center bg-transparent appearance-none text-selectMenuColor cursor-pointer'
                   value={router.query.pageSize}
@@ -699,13 +710,13 @@ export default function Students() {
             className='w-full h-full absolute top-0 right-0'
           />
           <DynamicForm
-            formTitle={dynamicFormProps[formType].formTitle}
-            inputsArray={dynamicFormProps[formType].inputsArray}
-            placeholderData={dynamicFormProps[formType].placeholderData}
-            editableData={dynamicFormProps[formType].editableData}
-            submitButtonText={dynamicFormProps[formType].submitButtonText}
-            inputOnChangeFunction={dynamicFormProps[formType].inputOnChangeFunction}
-            submitButtonFunction={dynamicFormProps[formType].submitButtonFunction}
+            formTitle={dynamicFormProps(formType).formTitle}
+            inputsArray={dynamicFormProps(formType).inputsArray}
+            placeholderData={dynamicFormProps(formType).placeholderData}
+            editableData={dynamicFormProps(formType).editableData}
+            submitButtonText={dynamicFormProps(formType).submitButtonText}
+            inputOnChangeFunction={dynamicFormProps(formType).inputOnChangeFunction}
+            submitButtonFunction={dynamicFormProps(formType).submitButtonFunction}
           />
           <p className='px-8 py-1 rounded-b-md bg-black/50 text-white text-xs shadow-form'>
             Click outside of the form to close it
