@@ -1,4 +1,4 @@
-This is a before-interview task, given by [Sikayetvar](https://www.sikayetvar.com/) company for my front-end developer job application. Click [here](https://sikayetvarfp.vercel.app) to see it live. Made with NextJS and DummyJSON API.
+This is a before-interview task, given by [Sikayetvar](https://www.sikayetvar.com/) company for my front-end developer job application. Click [here](https://sikayetvarcs.gwyndev.com) to see it live. Made with NextJS and DummyJSON API.
 
 ## Getting Started
 
